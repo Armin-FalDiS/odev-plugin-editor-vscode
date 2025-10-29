@@ -15,7 +15,7 @@
                 "run",
                 "${config:odoo.db}",
                 "--log-level=${config:odoo.logLevel}",
-                "--dev=xml",
+                "--dev=all",
                 "--update=${config:odoo.modules}",
                 "--log-handler=odoo.addons.base.models.ir_attachment:WARNING",
                 "--limit-time-cpu=0",
@@ -31,7 +31,7 @@
             "program": "./odoo/odoo-bin",
             "cwd": "${workspaceFolder:odoo}",
             "args": [
-                "--dev=xml",
+                "--dev=all",
                 "--database=${config:odoo.db}",
                 "--update=${config:odoo.modules}",
                 "--addons-path=odoo/addons,enterprise,design-themes,${workspaceFolder:project}",
@@ -58,13 +58,15 @@
                 "--init=${config:odoo.modules}",
                 "--test-tags=${config:odoo.testTags}",
                 "--log-level=${config:odoo.logLevel}",
-                "--dev=xml",
+                "--dev=all",
                 "--update=${config:odoo.modules}",
                 "--log-handler=odoo.addons.base.models.ir_attachment:WARNING",
                 "--limit-time-cpu=0",
                 "--limit-time-real=0",
                 "--max-cron-threads=1",
                 "--stop-after-init",
+                "-p",
+                "8068",
             ]
         },
         {
@@ -85,6 +87,8 @@
                 "--limit-time-real=0",
                 "--stop-after-init",
                 "--max-cron-threads=1",
+                "-p",
+                "8067",
             ]
         },
         {
@@ -103,10 +107,11 @@
                 "${config:odoo.db}",
                 "--update=${config:odoo.modules}",
                 "--log-level=${config:odoo.logLevel}",
-                "--dev=xml",
+                "--dev=all",
                 "--limit-time-cpu=0",
                 "--limit-time-real=0",
                 "--max-cron-threads=1",
+                "--no-http",
             ]
         },
     ]
