@@ -33,5 +33,22 @@
                 "--log-level=${config:odoo.logLevel}",
             ],
         },
+        {
+            "label": "~Init Template",
+            "command": "${config:pythonPath}",
+            "problemMatcher": [],
+            "args": [
+                "${config:odevPath}",
+                "create",
+                "-T",
+                "-f",
+                "-V",
+                "{{ DB_VERSION }}",
+                "${config:odoo.db}",
+                "--init",
+                "${config:odoo.modules}",
+                "--log-level=${config:odoo.logLevel}",
+            ],
+        },
     ]
 }
