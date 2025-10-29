@@ -8,7 +8,6 @@ from odev.common.python import PythonEnv
 
 from odev.plugins.odev_plugin_editor_base.common.editor import Editor
 
-
 logger = logging.getLogger(__name__)
 
 NON_MODULE_DIRECTORIES = ["util_package","ps-internal-edi"]
@@ -94,7 +93,7 @@ class VSCodeEditor(Editor):
             ODOO_PATH=self.database.odev.worktrees_path / self.database.worktree,
             VENV_PATH=self.database.venv.python.as_posix(),
             PYTHON_PATH=PythonEnv().python.as_posix(),
-            ODEV_EXE_PATH=self.database.odev.executable.readlink().as_posix(),
+            ODEV_EXE_PATH=self.database.odev.executable.as_posix(),
             COMMA_SEPERATED_ADDON_NAMES=",".join(
                 [
                     d.name
