@@ -2,7 +2,46 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "~Init Database",
+            "label": "~Init Fresh DB",
+            "dependsOn": ["create fresh db"],
+            "problemMatcher": [],
+            "detail": "Creates a new database and initializes modules."
+        },
+        {
+            "label": "~Init Fresh Test DB",
+            "dependsOn": ["create fresh test db"],
+            "problemMatcher": [],
+            "detail": "Creates a new test database and initializes modules."
+        },
+        {
+            "label": "~Init DB From Template",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "copy db from template",
+                "init modules (main db)"
+            ],
+            "problemMatcher": [],
+            "detail": "Restores database from template, then initializes modules."
+        },
+        {
+            "label": "~Init Test DB From Template",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "copy test db from template",
+                "init modules (test db)"
+            ],
+            "problemMatcher": [],
+            "detail": "Restores test database from template, then initializes modules."
+        },
+        {
+            "label": "~Create Template From DB",
+            "dependsOn": ["create template from db"],
+            "problemMatcher": [],
+            "detail": "Creates a template from the main database."
+        },
+
+        {
+            "label": "create fresh db",
             "command": "${config:pythonPath}",
             "problemMatcher": [],
             "args": [
@@ -19,7 +58,7 @@
             ],
         },
         {
-            "label": "~Init Test Database",
+            "label": "create fresh test db",
             "command": "${config:pythonPath}",
             "problemMatcher": [],
             "args": [
@@ -36,7 +75,19 @@
             ],
         },
         {
-            "label": "~Init DB From Template",
+            "label": "create template from db",
+            "command": "${config:pythonPath}",
+            "problemMatcher": [],
+            "args": [
+                "${config:odevPath}",
+                "create",
+                "-T",
+                "-f",
+                "${config:odoo.db}",
+            ],
+        },
+        {
+            "label": "copy db from template",
             "command": "${config:pythonPath}",
             "problemMatcher": [],
             "args": [
@@ -45,32 +96,51 @@
                 "-t",
                 "${config:odoo.db}:template",
                 "-f",
-                "-V",
-                "{{ DB_VERSION }}",
                 "${config:odoo.db}",
-                "--init",
-                "${config:odoo.modules}",
-                "--log-level=${config:odoo.logLevel}",
-                "--no-http",
             ],
         },
         {
-            "label": "~Init Template",
+            "label": "copy test db from template",
             "command": "${config:pythonPath}",
             "problemMatcher": [],
             "args": [
                 "${config:odevPath}",
                 "create",
-                "-T",
+                "-t",
+                "${config:odoo.db}:template",
                 "-f",
-                "-V",
-                "{{ DB_VERSION }}",
+                "${config:odoo.db}_test",
+            ],
+        },
+        {
+            "label": "init modules (main db)",
+            "command": "${config:pythonPath}",
+            "problemMatcher": [],
+            "args": [
+                "${config:odevPath}",
+                "run",
                 "${config:odoo.db}",
                 "--init",
                 "${config:odoo.modules}",
                 "--log-level=${config:odoo.logLevel}",
                 "--no-http",
+                "--stop-after-init",
             ],
         },
+        {
+            "label": "init modules (test db)",
+            "command": "${config:pythonPath}",
+            "problemMatcher": [],
+            "args": [
+                "${config:odevPath}",
+                "run",
+                "${config:odoo.db}_test",
+                "--init",
+                "${config:odoo.modules}",
+                "--log-level=${config:odoo.logLevel}",
+                "--no-http",
+                "--stop-after-init",
+            ],
+        }
     ]
 }
