@@ -114,7 +114,7 @@ class VSCodeEditor(Editor):
                 "console": "integratedTerminal",
                 "consoleName": f"Odev {title} ({self.database.name})",
                 "cwd": self.path.as_posix(),
-                "program": self.database.odev.executable.readlink().as_posix(),
+                "program": self.database.odev.executable.as_posix(),
                 "python": PythonEnv().python.as_posix(),
                 "args": [
                     title.lower(),
