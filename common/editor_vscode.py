@@ -1,10 +1,11 @@
 import json
 from pathlib import Path
-from typing import cast
+
+from jinja2 import Environment, FileSystemLoader
 
 from odev.common import progress, string
-from odev.common.console import console
 from odev.common.databases import LocalDatabase
+from odev.common.errors import OdevError
 from odev.common.logging import logging
 from odev.common.python import PythonEnv
 
@@ -12,6 +13,8 @@ from odev.plugins.odev_plugin_editor_base.common.editor import Editor
 
 
 logger = logging.getLogger(__name__)
+
+NON_MODULE_DIRECTORIES = ["util_package", "ps-internal-edi"]
 
 
 class VSCodeEditor(Editor):
@@ -24,8 +27,13 @@ class VSCodeEditor(Editor):
     def command(self) -> str:
         if isinstance(self.database, LocalDatabase):
             return f"{self._name} {self.workspace_path}"
-        else:
-            return super().command
+        raise OdevError("Database doesn't exist")
+
+    @property
+    def templates(self) -> Environment:
+        return Environment(
+            loader=FileSystemLoader(self.database.odev.plugins_path / "odev_plugin_editor_vscode/templates")
+        )
 
     @property
     def workspace_directory(self) -> Path:
@@ -57,98 +65,88 @@ class VSCodeEditor(Editor):
         with progress.spinner(f"Configuring {self._display_name} for project {self.git.name!r}"):
             self.workspace_directory.mkdir(parents=True, exist_ok=True)
 
-            missing_files = filter(
-                lambda path: not path.is_file(),
-                [self.workspace_path, self.launch_path, self.tasks_path],
-            )
-
-            if not list(missing_files):
-                return logger.debug("VSCode config files already exist")
-
             self._create_workspace()
             self._create_launch()
             self._create_tasks()
+            self._create_jsconfig()
 
             created_files = string.join_bullet(
                 [
                     f"Workspace: {self.workspace_path}",
-                    f"Debugging: {self.launch_path}",
+                    f"Launch: {self.launch_path}",
                     f"Tasks: {self.tasks_path}",
                 ],
             )
             logger.info(f"Created VSCode config for project {self.git.name!r}\n{created_files}")
 
+    def _get_rendered_template(self, template_name, **kwargs):
+        template = self.templates.get_template(template_name)
+        return template.render(kwargs)
+
     def _create_workspace(self):
         """Create a workspace file for the project."""
-        assert isinstance(self.database, LocalDatabase)
-
-        if self.workspace_path.is_file():
-            return logger.debug("Workspace file already exists")
-
-        workspace_config = {
-            "folders": [{"path": ".."}],
-            "settings": {
-                "terminal.integrated.cwd": self.path.as_posix(),
-                "python.defaultInterpreterPath": self.database.venv.python.as_posix(),
-            },
-        }
-
-        for worktree in self.database.worktrees:
-            cast(list, workspace_config["folders"]).append({"path": worktree.path.as_posix()})
-
-        console.print(json.dumps(workspace_config, indent=4), file=self.workspace_path)
+        rendered_template = self._get_rendered_template(
+            "code-workspace.jinja",
+            DB_NAME=self.database.name,
+            ODOO_PATH=self.database.odev.worktrees_path / self.database.worktree,
+            VENV_PATH=self.database.venv.python.as_posix(),
+            PYTHON_PATH=PythonEnv().python.as_posix(),
+            ODEV_EXE_PATH=self.database.odev.executable.as_posix(),
+            COMMA_SEPERATED_ADDON_NAMES=",".join(
+                [
+                    d.name
+                    for d in self.path.iterdir()
+                    if (d.is_dir() and not d.name.startswith(".") and d.name not in NON_MODULE_DIRECTORIES)
+                ]
+            ),
+        )
+        with open(self.workspace_path, "w", encoding="utf-8") as f:
+            f.write(rendered_template)
 
     def _create_launch(self):
         """Create a launch file for the project."""
-        if self.launch_path.is_file():
-            return logger.debug("Launch file already exists")
-
-        def run_config(shell: bool = False):
-            title = "Shell" if shell else "Run"
-            return {
-                "name": title,
-                "type": "debugpy",
-                "request": "launch",
-                "subProcess": True,
-                "justMyCode": True,
-                "console": "integratedTerminal",
-                "consoleName": f"Odev {title} ({self.database.name})",
-                "cwd": self.path.as_posix(),
-                "program": self.database.odev.executable.as_posix(),
-                "python": PythonEnv().python.as_posix(),
-                "args": [
-                    title.lower(),
-                    self.database.name,
-                    "--log-handler=odoo.addons.base.models.ir_attachment:WARNING",
-                    "--limit-time-cpu=0",
-                    "--limit-time-real=0",
-                ],
-            }
-
-        launch_config = {
-            "version": "0.2.0",
-            "configurations": [
-                run_config(),
-                run_config(True),
-                {
-                    "name": "Attach Debugger",
-                    "type": "debugpy",
-                    "request": "attach",
-                    "processId": "${command:pickProcess}",
-                },
-            ],
-        }
-
-        console.print(json.dumps(launch_config, indent=4), file=self.launch_path)
+        rendered_template = self._get_rendered_template("launch.jinja")
+        with open(self.launch_path, "w", encoding="utf-8") as f:
+            f.write(rendered_template)
 
     def _create_tasks(self):
         """Create a tasks file for the project."""
-        if self.tasks_path.is_file():
-            return logger.debug("Tasks file already exists")
+        rendered_template = self._get_rendered_template(
+            "tasks.jinja",
+            DB_VERSION=self.database.version,
+        )
+        with open(self.tasks_path, "w", encoding="utf-8") as f:
+            f.write(rendered_template)
 
-        tasks_config = {
-            "version": "2.0.0",
-            "tasks": [],
-        }
+    def _create_jsconfig(self):
+        """Create JS config file to provide intellisense JavaScript."""
+        ODOO_PATH = self.database.odev.worktrees_path / self.database.worktree
+        root = Path(ODOO_PATH).resolve()
 
-        console.print(json.dumps(tasks_config, indent=4), file=self.tasks_path)
+        addon_dirs = [
+            root / "addons",
+            root / "odoo" / "addons",
+            root / "enterprise",
+            root,
+        ]
+
+        paths_map = {}
+
+        for addon_dir in addon_dirs:
+            if not addon_dir.exists():
+                continue
+            for module in addon_dir.iterdir():
+                if module.is_dir():
+                    static_src_path = module / "static" / "src"
+                    if static_src_path.exists():
+                        paths_map[f"@{module.name}/*"] = [f"{static_src_path.relative_to(root).as_posix()}/*"]
+
+        modules_mapping = dict(sorted(paths_map.items()))
+
+        rendered_template = self._get_rendered_template(
+            "jsconfig.jinja",
+            ODOO_PATH=ODOO_PATH,
+            JS_MODULES_PATHS=json.dumps(modules_mapping, indent=12),
+        )
+        with open(self.path / "jsconfig.json", "w", encoding="utf-8") as f:
+            f.write(rendered_template)

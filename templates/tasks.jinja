@@ -1,0 +1,213 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "~Init Fresh DB",
+            "dependsOn": ["create fresh db"],
+            "problemMatcher": [],
+            "detail": "Creates a new database and initializes modules.",
+            "presentation": {
+                "panel": "shared",
+                "reveal": "silent",
+                "close": true
+            }
+        },
+        {
+            "label": "~Init Fresh Test DB",
+            "dependsOn": ["create fresh test db"],
+            "problemMatcher": [],
+            "detail": "Creates a new test database and initializes modules.",
+            "presentation": {
+                "panel": "shared",
+                "reveal": "silent",
+                "close": true
+            }
+        },
+        {
+            "label": "~Init DB From Template",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "copy db from template",
+                "init modules (main db)"
+            ],
+            "problemMatcher": [],
+            "detail": "Restores database from template, then initializes modules.",
+            "presentation": {
+                "panel": "shared",
+                "reveal": "silent",
+                "close": true
+            }
+        },
+        {
+            "label": "~Init Test DB From Template",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "copy test db from template",
+                "init modules (test db)"
+            ],
+            "problemMatcher": [],
+            "detail": "Restores test database from template, then initializes modules.",
+            "presentation": {
+                "panel": "shared",
+                "reveal": "silent",
+                "close": true
+            }
+        },
+        {
+            "label": "~Create Template From DB",
+            "dependsOn": ["create template from db"],
+            "problemMatcher": [],
+            "detail": "Creates a template from the main database.",
+            "presentation": {
+                "panel": "shared",
+                "reveal": "silent",
+                "close": true
+            }
+        },
+
+        {
+            "label": "create fresh db",
+            "command": "${config:odevPath}",
+            "problemMatcher": [],
+            "args": [
+                "create",
+                "-f",
+                "-V",
+                "{{ DB_VERSION }}",
+                "${config:odoo.db}",
+                "--init=${config:odoo.modules}",
+                "--log-level=${config:odoo.logLevel}",
+                "--no-http",
+            ],
+            "presentation": {
+                "panel": "shared",
+                "reveal": "silent",
+                "close": true
+            },
+        },
+        {
+            "label": "create fresh test db",
+            "command": "${config:odevPath}",
+            "problemMatcher": [],
+            "args": [
+                "create",
+                "-f",
+                "-V",
+                "{{ DB_VERSION }}",
+                "${config:odoo.db}_test",
+                "--init=${config:odoo.modules}",
+                "--log-level=${config:odoo.logLevel}",
+                "--no-http",
+            ],
+            "presentation": {
+                "panel": "shared",
+                "reveal": "silent",
+                "close": true
+            },
+        },
+        {
+            "label": "create template from db",
+            "command": "${config:odevPath}",
+            "problemMatcher": [],
+            "args": [
+                "create",
+                "-T",
+                "-f",
+                "${config:odoo.db}",
+            ],
+            "presentation": {
+                "panel": "shared",
+                "reveal": "silent",
+                "close": true
+            },
+        },
+        {
+            "label": "copy db from template",
+            "command": "${config:odevPath}",
+            "problemMatcher": [],
+            "args": [
+                "create",
+                "-t",
+                "${config:odoo.db}:template",
+                "-f",
+                "${config:odoo.db}",
+            ],
+            "presentation": {
+                "panel": "shared",
+                "reveal": "silent",
+                "close": true
+            },
+        },
+        {
+            "label": "copy test db from template",
+            "command": "${config:odevPath}",
+            "problemMatcher": [],
+            "args": [
+                "create",
+                "-t",
+                "${config:odoo.db}:template",
+                "-f",
+                "${config:odoo.db}_test",
+            ],
+            "presentation": {
+                "panel": "shared",
+                "reveal": "silent",
+                "close": true
+            },
+        },
+        {
+            "label": "init modules (main db)",
+            "command": "${config:odevPath}",
+            "problemMatcher": [],
+            "args": [
+                "run",
+                "${config:odoo.db}",
+                "--init=${config:odoo.modules}",
+                "--log-level=${config:odoo.logLevel}",
+                "--no-http",
+                "--stop-after-init",
+            ],
+            "presentation": {
+                "panel": "shared",
+                "reveal": "silent",
+                "close": true
+            },
+        },
+        {
+            "label": "init modules (test db)",
+            "command": "${config:odevPath}",
+            "problemMatcher": [],
+            "args": [
+                "run",
+                "${config:odoo.db}_test",
+                "--init=${config:odoo.modules}",
+                "--log-level=${config:odoo.logLevel}",
+                "--no-http",
+                "--stop-after-init",
+            ],
+            "presentation": {
+                "panel": "shared",
+                "reveal": "silent",
+                "close": true
+            },
+        },
+        {
+            "label": "update modules (test db)",
+            "command": "${config:odevPath}",
+            "problemMatcher": [],
+            "args": [
+                "run",
+                "${config:odoo.db}_test",
+                "--update=${config:odoo.modules}",
+                "--log-level=${config:odoo.logLevel}",
+                "--no-http",
+                "--stop-after-init",
+            ],
+            "presentation": {
+                "panel": "shared",
+                "reveal": "silent",
+                "close": true
+            },
+        }
+    ]
+}
