@@ -15,8 +15,6 @@ from odev.plugins.odev_plugin_editor_base.common.editor import Editor
 
 logger = logging.getLogger(__name__)
 
-NON_MODULE_DIRECTORIES = ["util_package", "ps-internal-edi"]
-
 
 class VSCodeEditor(Editor):
     """Class meant for interacting with VSCode."""
@@ -94,13 +92,6 @@ class VSCodeEditor(Editor):
             VENV_PATH=self.database.venv.python.as_posix(),
             PYTHON_PATH=PythonEnv().python.as_posix(),
             ODEV_EXE_PATH=(self.database.odev.path / "main.py").as_posix(),
-            COMMA_SEPERATED_ADDON_NAMES=",".join(
-                [
-                    d.name
-                    for d in self.path.iterdir()
-                    if (d.is_dir() and not d.name.startswith(".") and d.name not in NON_MODULE_DIRECTORIES)
-                ]
-            ),
         )
         with open(self.workspace_path, "w", encoding="utf-8") as f:
             f.write(rendered_template)
